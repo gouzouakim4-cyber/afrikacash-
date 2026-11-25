@@ -1,0 +1,507 @@
+<title>Afrikacash</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: colonne mobile unique, carte de solde sombre en tête, actions dessous, historique en liste.
+   Couleurs: vert profond (confiance), soleil (accent unique), neutres teintés de vert. */
+:root{
+  --bg:#F2F6F3; --surface:#FFFFFF; --fg:#10201B; --muted:#5A6D66; --line:#D9E4DE;
+  --brand:#0B6B52; --brand-ink:#FFFFFF; --sun:#F2B632; --sun-ink:#2A1F00;
+  --hero:#0B3D31; --hero-fg:#EAF6F1; --hero-muted:#9CC5B7;
+  --good:#0B7A4B; --bad:#B3361F; --warn-bg:#FFF4D6; --warn-fg:#5C4300;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A1411; --surface:#12201B; --fg:#E8F1ED; --muted:#8FA59C; --line:#223530;
+    --brand:#34C49A; --brand-ink:#04241A; --sun:#F2B632; --sun-ink:#2A1F00;
+    --hero:#0F3A2F; --hero-fg:#EAF6F1; --hero-muted:#8FBBAC;
+    --good:#4FD3A0; --bad:#F29A84; --warn-bg:#3A2E0B; --warn-fg:#F5DC9A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0A1411; --surface:#12201B; --fg:#E8F1ED; --muted:#8FA59C; --line:#223530;
+  --brand:#34C49A; --brand-ink:#04241A; --sun:#F2B632; --sun-ink:#2A1F00;
+  --hero:#0F3A2F; --hero-fg:#EAF6F1; --hero-muted:#8FBBAC;
+  --good:#4FD3A0; --bad:#F29A84; --warn-bg:#3A2E0B; --warn-fg:#F5DC9A;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-block:8px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+.top{display:flex;align-items:center;justify-content:space-between;padding-block:8px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:-.01em}
+.coin-bg{fill:var(--sun)} .coin-mark{stroke:var(--hero);fill:none}
+.pill{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--sun);display:inline-block}
+.pill.live i{background:var(--good)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{border:0;background:transparent;border-radius:9px;padding:9px;font-weight:600;color:var(--muted)}
+.seg button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:600}
+input[type=text],input[type=email],input[type=password],input[type=tel],input[type=number],input[type=url]{
+  width:100%;font:inherit;font-size:16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg)}
+input::placeholder{color:var(--muted);opacity:.8}
+.btn{border:0;border-radius:12px;padding:13px 16px;font-weight:600;background:var(--brand);color:var(--brand-ink);display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.btn.ghost{background:var(--surface);color:var(--fg);border:1px solid var(--line)}
+.btn.sun{background:var(--sun);color:var(--sun-ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.link{background:none;border:0;padding:0;color:var(--brand);font-weight:600;text-decoration:underline}
+.err{background:var(--warn-bg);color:var(--warn-fg);border-radius:10px;padding:10px 12px;font-size:13.5px}
+
+.hero{background:var(--hero);color:var(--hero-fg);border-radius:18px;overflow:hidden}
+.hero-in{padding:22px 20px 20px}
+.hero .lbl{color:var(--hero-muted);font-size:13px;font-weight:500}
+.hero .amt{font-family:var(--font-display);font-weight:700;font-size:clamp(28px,9vw,40px);letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:4px;overflow-wrap:anywhere}
+.zig{height:10px;background:
+  linear-gradient(135deg,var(--sun) 25%,transparent 25%) 0 0/14px 14px,
+  linear-gradient(225deg,var(--sun) 25%,transparent 25%) 0 0/14px 14px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.sec-h{display:flex;align-items:baseline;justify-content:space-between}
+.sec-h h2{font-size:17px}
+.list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.row{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px 14px}
+.row + .row{border-top:1px solid var(--line)}
+.ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--bg);color:var(--muted)}
+.ic.in{color:var(--good)} .ic.out{color:var(--fg)}
+.row .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .d{font-size:12.5px;color:var(--muted)}
+.row .v{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.row .v.in{color:var(--good)}
+.empty{padding:26px 18px;text-align:center;color:var(--muted)}
+
+.scrim{position:fixed;inset:0;background:rgba(5,12,10,.55);z-index:20}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;margin:0 auto;max-width:480px;max-height:90vh;overflow:auto;
+  background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:20px 20px 0 0;
+  padding:18px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sheet-h h2{font-size:18px}
+.x{border:1px solid var(--line);background:var(--bg);width:34px;height:34px;border-radius:50%;line-height:1;font-size:18px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 12px;font-size:13.5px;font-weight:600}
+.found{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;font-weight:600}
+.found .av{width:34px;height:34px;border-radius:50%;background:var(--sun);color:var(--sun-ink);display:grid;place-items:center;font-family:var(--font-display);font-weight:700}
+details{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--bg)}
+summary{cursor:pointer;font-weight:600;font-size:13.5px}
+pre{margin:8px 0 0;max-height:200px;overflow:auto;font-size:11.5px;line-height:1.45;white-space:pre;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px}
+.steps{display:flex;flex-direction:column;gap:18px}
+.step h3{font-size:15px;margin-bottom:6px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;
+  background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;max-width:calc(100% - 32px);text-align:center}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><circle class="coin-bg" cx="16" cy="16" r="15"/><path class="coin-mark" d="M9 22 16 9l7 13M12.2 17.5h7.6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Afrikacash
+    </div>
+    <button id="modeBtn" class="pill" type="button" aria-label="Réglages de connexion"><i></i><span id="modeTxt">Démo</span></button>
+  </header>
+
+  <main id="authView" class="stack" hidden>
+    <div>
+      <h1 style="font-size:26px;letter-spacing:-.02em">Envoyez de l'argent en quelques secondes.</h1>
+      <p class="muted" style="margin:8px 0 0">Un portefeuille en FCFA, des transferts entre utilisateurs, un historique clair.</p>
+    </div>
+    <form id="authForm" class="card stack" novalidate>
+      <div class="seg" role="tablist">
+        <button type="button" id="tabLogin" role="tab" aria-selected="true">Connexion</button>
+        <button type="button" id="tabSignup" role="tab" aria-selected="false">Inscription</button>
+      </div>
+      <div class="field signup-only" hidden><label for="fName">Nom complet</label><input id="fName" type="text" autocomplete="name" placeholder="Aminata Diallo"></div>
+      <div class="field signup-only" hidden><label for="fPhone">Téléphone</label><input id="fPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0701020304"></div>
+      <div class="field"><label for="fEmail">Email</label><input id="fEmail" type="email" autocomplete="email" placeholder="vous@exemple.com"></div>
+      <div class="field"><label for="fPass">Mot de passe</label><input id="fPass" type="password" autocomplete="current-password" placeholder="6 caractères minimum"></div>
+      <div id="authErr" class="err" role="alert" hidden></div>
+      <button id="authSubmit" class="btn" type="submit">Se connecter</button>
+      <p id="demoHint" class="muted small" style="margin:0">Mode démo : rien n'est envoyé sur un serveur. Entrez n'importe quel email et mot de passe. Pour tester un envoi, cherchez <b>awa@exemple.ci</b>.</p>
+    </form>
+  </main>
+
+  <main id="appView" class="stack" hidden>
+    <div class="sec-h">
+      <h2 id="hello" style="font-size:20px">Bonjour</h2>
+      <button id="btnLogout" class="link small" type="button">Se déconnecter</button>
+    </div>
+    <section class="hero" aria-label="Solde">
+      <div class="hero-in">
+        <div class="lbl">Solde disponible</div>
+        <div id="balance" class="amt">—</div>
+      </div>
+      <div class="zig" aria-hidden="true"></div>
+    </section>
+    <div id="netErr" class="err" role="alert" hidden></div>
+    <div class="actions">
+      <button id="btnSend" class="btn" type="button">Envoyer</button>
+      <button id="btnDeposit" class="btn ghost" type="button">Ajouter (test)</button>
+    </div>
+    <div class="sec-h"><h2>Historique</h2><span id="count" class="muted small"></span></div>
+    <div id="history" class="list"></div>
+  </main>
+</div>
+
+<div id="scrim" class="scrim" hidden></div>
+
+<section id="sheetSend" class="sheet" aria-label="Envoyer de l'argent" hidden>
+  <div class="sheet-h"><h2>Envoyer de l'argent</h2><button class="x" type="button" data-close aria-label="Fermer">×</button></div>
+  <form id="sendForm" class="stack" novalidate>
+    <div class="field"><label for="rcpt">Email ou téléphone du destinataire</label>
+      <input id="rcpt" type="text" autocomplete="off" placeholder="awa@exemple.ci"></div>
+    <button id="findBtn" class="btn ghost" type="button">Rechercher</button>
+    <div id="found" class="found" hidden><div id="foundAv" class="av">A</div><div><div id="foundName">—</div><div class="muted small" style="font-weight:400">Destinataire trouvé</div></div></div>
+    <div id="amtWrap" class="stack" hidden>
+      <div class="field"><label for="amt">Montant en FCFA</label><input id="amt" type="number" inputmode="numeric" min="1" step="1" placeholder="5000"></div>
+      <div class="chips"><button type="button" class="chip" data-amt="1000">1 000</button><button type="button" class="chip" data-amt="5000">5 000</button><button type="button" class="chip" data-amt="10000">10 000</button><button type="button" class="chip" data-amt="25000">25 000</button></div>
+    </div>
+    <div id="sendErr" class="err" role="alert" hidden></div>
+    <button id="sendBtn" class="btn" type="submit" disabled>Envoyer</button>
+  </form>
+</section>
+
+<section id="sheetDeposit" class="sheet" aria-label="Ajouter de l'argent" hidden>
+  <div class="sheet-h"><h2>Ajouter de l'argent (test)</h2><button class="x" type="button" data-close aria-label="Fermer">×</button></div>
+  <form id="depForm" class="stack" novalidate>
+    <p class="muted small" style="margin:0">Dépôt fictif pour tester l'application. Les vrais dépôts Orange Money, MTN et Wave viendront avec un agrégateur de paiement.</p>
+    <div class="field"><label for="depAmt">Montant en FCFA (50 000 maximum)</label><input id="depAmt" type="number" inputmode="numeric" min="1" max="50000" step="1" placeholder="10000"></div>
+    <div class="chips"><button type="button" class="chip" data-dep="5000">5 000</button><button type="button" class="chip" data-dep="10000">10 000</button><button type="button" class="chip" data-dep="25000">25 000</button><button type="button" class="chip" data-dep="50000">50 000</button></div>
+    <div id="depErr" class="err" role="alert" hidden></div>
+    <button id="depBtn" class="btn sun" type="submit">Ajouter</button>
+  </form>
+</section>
+
+<section id="sheetSettings" class="sheet" aria-label="Connexion à la base" hidden>
+  <div class="sheet-h"><h2>Connexion à Supabase</h2><button class="x" type="button" data-close aria-label="Fermer">×</button></div>
+  <div class="steps">
+    <div class="step">
+      <h3>1. Installer l'étape 2 dans votre base</h3>
+      <p class="muted small" style="margin:0 0 10px">Ajoute la recherche de destinataire, l'historique et un dépôt de test limité à 50 000 FCFA. Collez le script dans SQL Editor, nouvelle requête, puis Run. Supprimez la fonction <b>demo_deposit</b> avant le lancement public.</p>
+      <button id="copySql" class="btn ghost" type="button">Copier le script SQL</button>
+      <details id="sqlDetails" style="margin-top:10px"><summary>Voir le script</summary>
+<pre id="sqlText">alter table public.profiles add column if not exists email text;
+
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, full_name, email, phone)
+  values (new.id, new.raw_user_meta_data->>'full_name', new.email, nullif(new.raw_user_meta_data->>'phone', ''));
+  insert into public.wallets (user_id) values (new.id);
+  return new;
+end; $$;
+
+update public.profiles p set email = u.email from auth.users u where u.id = p.id;
+
+create or replace function public.find_user(p_query text)
+returns table(id uuid, full_name text)
+language sql security definer set search_path = public as $$
+  select p.id, coalesce(p.full_name, p.email)
+  from profiles p
+  where p.id != auth.uid()
+    and (lower(p.email) = lower(trim(p_query)) or p.phone = trim(p_query))
+  limit 1;
+$$;
+
+create or replace function public.my_history()
+returns table(id uuid, direction text, other_name text, amount numeric, type text, status text, created_at timestamptz)
+language sql security definer set search_path = public as $$
+  select t.id,
+    case when t.type = 'deposit' or t.receiver_id = auth.uid() then 'in' else 'out' end,
+    p.full_name, t.amount, t.type, t.status, t.created_at
+  from transactions t
+  left join profiles p on p.id = case when t.sender_id = auth.uid() then t.receiver_id else t.sender_id end
+  where t.sender_id = auth.uid() or t.receiver_id = auth.uid()
+  order by t.created_at desc
+  limit 50;
+$$;
+
+create or replace function public.demo_deposit(p_amount numeric)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'Non connecté'; end if;
+  if p_amount &lt;= 0 or p_amount > 50000 then raise exception 'Montant invalide'; end if;
+  update wallets set balance = balance + p_amount where user_id = auth.uid();
+  insert into transactions (receiver_id, amount, type, status)
+  values (auth.uid(), p_amount, 'deposit', 'success');
+end; $$;</pre></details>
+    </div>
+    <form id="cfgForm" class="step stack" novalidate>
+      <h3>2. Connecter l'application</h3>
+      <p class="muted small" style="margin:0">Dans Supabase : Project Settings, puis API. Copiez le Project URL et la clé <b>anon public</b>. N'utilisez jamais la clé service_role.</p>
+      <div class="field"><label for="cfgUrl">Project URL</label><input id="cfgUrl" type="url" placeholder="https://xxxx.supabase.co" autocomplete="off"></div>
+      <div class="field"><label for="cfgKey">Clé anon public</label><input id="cfgKey" type="text" placeholder="eyJ..." autocomplete="off"></div>
+      <div id="cfgErr" class="err" role="alert" hidden></div>
+      <button class="btn" type="submit">Enregistrer et se connecter</button>
+      <button id="cfgDemo" class="btn ghost" type="button">Revenir au mode démo</button>
+      <p class="muted small" style="margin:0">Cet aperçu bloque les appels vers Supabase. Pour utiliser votre vraie base, hébergez ce fichier chez Netlify, Vercel ou GitHub Pages.</p>
+    </form>
+  </div>
+</section>
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var fmt=function(n){return new Intl.NumberFormat('fr-FR').format(Math.round(Number(n)||0)).replace(/ /g,' ')+' FCFA'};
+var load=function(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
+var store=function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+var uid=function(){return Math.random().toString(36).slice(2,10)};
+
+var cfg=load('afc-cfg')||{};
+var live=false, sb=null, api=null;
+var state={name:'',balance:0};
+var found=null;
+
+/* ---------- Mode démo ---------- */
+var contacts=[
+  {id:'c1',name:'Awa Koné',email:'awa@exemple.ci',phone:'0701020304'},
+  {id:'c2',name:'Kouadio Yao',email:'yao@exemple.ci',phone:'0505060708'},
+  {id:'c3',name:'Fatou Traoré',email:'fatou@exemple.ci',phone:'0102030405'}
+];
+var demo=load('afc-demo')||{me:null,tx:[]};
+var saveDemo=function(){store('afc-demo',demo)};
+var nowIso=function(){return new Date().toISOString()};
+var demoApi={
+  session:async function(){return demo.me?{name:demo.me.name}:null},
+  signUp:async function(name,phone,email){
+    demo.me={name:name||email.split('@')[0],email:email,balance:25000};
+    demo.tx=[{id:uid(),direction:'in',other_name:'Bonus de bienvenue',amount:25000,type:'deposit',created_at:nowIso()}];
+    saveDemo();return{};
+  },
+  signIn:async function(email){if(!demo.me)await demoApi.signUp('','',email);return{}},
+  signOut:async function(){demo.me=null;demo.tx=[];saveDemo()},
+  balance:async function(){return demo.me.balance},
+  history:async function(){return demo.tx.slice().sort(function(a,b){return b.created_at.localeCompare(a.created_at)})},
+  findUser:async function(q){
+    q=q.trim().toLowerCase();
+    var c=contacts.filter(function(c){return c.email===q||c.phone===q})[0];
+    return c?{id:c.id,full_name:c.name}:null;
+  },
+  send:async function(id,amount){
+    var c=contacts.filter(function(c){return c.id===id})[0];
+    if(!c)throw new Error('Destinataire introuvable');
+    if(amount>demo.me.balance)throw new Error('Solde insuffisant');
+    demo.me.balance-=amount;
+    demo.tx.push({id:uid(),direction:'out',other_name:c.name,amount:amount,type:'transfer',created_at:nowIso()});
+    saveDemo();
+  },
+  deposit:async function(amount){
+    demo.me.balance+=amount;
+    demo.tx.push({id:uid(),direction:'in',other_name:'',amount:amount,type:'deposit',created_at:nowIso()});
+    saveDemo();
+  }
+};
+
+/* ---------- Mode connecté (Supabase) ---------- */
+var liveApi={
+  session:async function(){
+    var r=await sb.auth.getSession();var u=r.data.session&&r.data.session.user;
+    return u?{name:(u.user_metadata&&u.user_metadata.full_name)||u.email}:null;
+  },
+  signUp:async function(name,phone,email,pw){
+    var r=await sb.auth.signUp({email:email,password:pw,options:{data:{full_name:name,phone:phone}}});
+    if(r.error)throw r.error;
+    return{needsConfirm:!r.data.session};
+  },
+  signIn:async function(email,pw){var r=await sb.auth.signInWithPassword({email:email,password:pw});if(r.error)throw r.error;return{}},
+  signOut:async function(){await sb.auth.signOut()},
+  balance:async function(){var r=await sb.from('wallets').select('balance').limit(1).single();if(r.error)throw r.error;return Number(r.data.balance)},
+  history:async function(){var r=await sb.rpc('my_history');if(r.error)throw r.error;return r.data||[]},
+  findUser:async function(q){var r=await sb.rpc('find_user',{p_query:q});if(r.error)throw r.error;return (r.data&&r.data[0])||null},
+  send:async function(id,amount){var r=await sb.rpc('transfer_money',{p_receiver:id,p_amount:amount});if(r.error)throw r.error},
+  deposit:async function(amount){var r=await sb.rpc('demo_deposit',{p_amount:amount});if(r.error)throw r.error}
+};
+
+/* ---------- Utilitaires d'interface ---------- */
+function friendly(e){
+  var m=String((e&&e.message)||e||'');
+  if(/failed to fetch|networkerror|load failed/i.test(m))return"Impossible de joindre la base. Ouvrez le fichier Afrikacash depuis votre propre hébergement, hors de cet aperçu.";
+  if(/invalid login/i.test(m))return'Email ou mot de passe incorrect.';
+  if(/already registered/i.test(m))return'Cet email a déjà un compte. Connectez-vous.';
+  if(/password should be/i.test(m))return'Mot de passe trop court (6 caractères minimum).';
+  if(/check constraint|balance_check/i.test(m))return'Solde insuffisant.';
+  if(/could not find the function|schema cache|find_user|my_history|demo_deposit/i.test(m))return"Le script SQL de l'étape 2 n'est pas encore installé. Ouvrez les réglages (pastille en haut).";
+  if(/email not confirmed/i.test(m))return"Confirmez votre email avant de vous connecter.";
+  return m||'Une erreur est survenue.';
+}
+function showErr(sel,msg){var el=$(sel);el.textContent=msg;el.hidden=!msg}
+var toastTimer;
+function toast(msg){var t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.hidden=true},3200)}
+function busy(btn,on){btn.disabled=!!on}
+function openSheet(id){closeSheets();$('#scrim').hidden=false;$('#'+id).hidden=false}
+function closeSheets(){Array.prototype.forEach.call(document.querySelectorAll('.sheet'),function(s){s.hidden=true});$('#scrim').hidden=true}
+function updateBadge(){$('#modeTxt').textContent=live?'En ligne':'Démo';$('#modeBtn').className='pill'+(live?' live':'');$('#demoHint').hidden=live}
+
+var ICONS={
+  in:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  out:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  dep:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>'
+};
+function renderHistory(rows){
+  var box=$('#history');
+  $('#count').textContent=rows.length?rows.length+' opération'+(rows.length>1?'s':''):'';
+  if(!rows.length){box.innerHTML='<div class="empty">Aucune opération pour l\'instant. Ajoutez de l\'argent ou envoyez un premier transfert.</div>';return}
+  box.innerHTML=rows.map(function(r){
+    var isDep=r.type==='deposit', out=r.direction==='out';
+    var label=isDep?(r.other_name||'Dépôt (test)'):(out?'Envoyé à ':'Reçu de ')+esc(r.other_name||'un utilisateur');
+    if(isDep&&r.other_name)label=esc(r.other_name);
+    var d=new Date(r.created_at);
+    var date=isNaN(d)?'':d.toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    return '<div class="row"><div class="ic '+(out?'out':'in')+'">'+(isDep?ICONS.dep:out?ICONS.out:ICONS.in)+'</div>'
+      +'<div style="min-width:0"><div class="t">'+label+'</div><div class="d">'+esc(date)+'</div></div>'
+      +'<div class="v '+(out?'':'in')+'">'+(out?'−':'+')+fmt(r.amount)+'</div></div>';
+  }).join('');
+}
+async function refresh(){
+  try{
+    var res=await Promise.all([api.balance(),api.history()]);
+    state.balance=res[0];$('#balance').textContent=fmt(res[0]);renderHistory(res[1]);showErr('#netErr','');
+  }catch(e){showErr('#netErr',friendly(e))}
+}
+function showAuth(){$('#appView').hidden=true;$('#authView').hidden=false}
+async function enterApp(name){
+  state.name=name||state.name;
+  $('#authView').hidden=true;$('#appView').hidden=false;
+  $('#hello').textContent='Bonjour, '+(state.name||'').split(' ')[0];
+  await refresh();
+}
+
+/* ---------- Connexion / inscription ---------- */
+var authMode='login';
+function setAuth(m){
+  authMode=m;
+  $('#tabLogin').setAttribute('aria-selected',String(m==='login'));
+  $('#tabSignup').setAttribute('aria-selected',String(m==='signup'));
+  Array.prototype.forEach.call(document.querySelectorAll('.signup-only'),function(e){e.hidden=m!=='signup'});
+  $('#authSubmit').textContent=m==='login'?'Se connecter':'Créer mon compte';
+  $('#fPass').autocomplete=m==='login'?'current-password':'new-password';
+  showErr('#authErr','');
+}
+$('#tabLogin').onclick=function(){setAuth('login')};
+$('#tabSignup').onclick=function(){setAuth('signup')};
+$('#authForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var name=$('#fName').value.trim(),phone=$('#fPhone').value.trim(),email=$('#fEmail').value.trim(),pw=$('#fPass').value;
+  if(!email||!pw){showErr('#authErr','Entrez votre email et votre mot de passe.');return}
+  if(authMode==='signup'&&!name){showErr('#authErr','Entrez votre nom complet.');return}
+  var btn=$('#authSubmit');busy(btn,true);showErr('#authErr','');
+  try{
+    if(authMode==='signup'){
+      var r=await api.signUp(name,phone,email,pw);
+      if(r.needsConfirm){setAuth('login');showErr('#authErr','Compte créé. Confirmez votre email, puis connectez-vous.');return}
+    }else{await api.signIn(email,pw)}
+    var s=await api.session();
+    await enterApp((s&&s.name)||name||email);
+  }catch(err){showErr('#authErr',friendly(err))}
+  finally{busy(btn,false)}
+});
+$('#btnLogout').onclick=async function(){try{await api.signOut()}catch(e){}showAuth();$('#fPass').value=''};
+
+/* ---------- Envoi ---------- */
+function resetSend(){
+  found=null;$('#rcpt').value='';$('#amt').value='';
+  $('#found').hidden=true;$('#amtWrap').hidden=true;showErr('#sendErr','');updateSendBtn();
+}
+function updateSendBtn(){
+  var a=Math.floor(Number($('#amt').value));var b=$('#sendBtn');
+  if(found&&a>0){b.textContent='Envoyer '+fmt(a)+' à '+found.full_name;b.disabled=false}
+  else{b.textContent='Envoyer';b.disabled=true}
+}
+$('#btnSend').onclick=function(){resetSend();openSheet('sheetSend');$('#rcpt').focus()};
+$('#findBtn').onclick=async function(){
+  var q=$('#rcpt').value.trim();showErr('#sendErr','');
+  if(!q){showErr('#sendErr','Entrez un email ou un numéro de téléphone.');return}
+  var b=$('#findBtn');busy(b,true);
+  try{
+    var u=await api.findUser(q);
+    if(!u){found=null;$('#found').hidden=true;$('#amtWrap').hidden=true;showErr('#sendErr','Aucun utilisateur trouvé avec cet email ou ce numéro.')}
+    else{found=u;$('#foundName').textContent=u.full_name;$('#foundAv').textContent=(u.full_name||'?').charAt(0).toUpperCase();$('#found').hidden=false;$('#amtWrap').hidden=false;$('#amt').focus()}
+  }catch(err){showErr('#sendErr',friendly(err))}
+  finally{busy(b,false);updateSendBtn()}
+};
+$('#amt').addEventListener('input',updateSendBtn);
+Array.prototype.forEach.call(document.querySelectorAll('[data-amt]'),function(c){c.onclick=function(){$('#amt').value=c.getAttribute('data-amt');updateSendBtn()}});
+$('#sendForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var a=Math.floor(Number($('#amt').value));
+  if(!found||!(a>0))return;
+  if(a>state.balance){showErr('#sendErr','Solde insuffisant. Il vous reste '+fmt(state.balance)+'.');return}
+  var b=$('#sendBtn');busy(b,true);showErr('#sendErr','');
+  try{await api.send(found.id,a);var n=found.full_name;closeSheets();toast('Envoyé : '+fmt(a)+' à '+n);await refresh()}
+  catch(err){showErr('#sendErr',friendly(err));updateSendBtn()}
+});
+
+/* ---------- Dépôt de test ---------- */
+$('#btnDeposit').onclick=function(){$('#depAmt').value='';showErr('#depErr','');openSheet('sheetDeposit')};
+Array.prototype.forEach.call(document.querySelectorAll('[data-dep]'),function(c){c.onclick=function(){$('#depAmt').value=c.getAttribute('data-dep')}});
+$('#depForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var a=Math.floor(Number($('#depAmt').value));
+  if(!(a>0)||a>50000){showErr('#depErr','Entrez un montant entre 1 et 50 000 FCFA.');return}
+  var b=$('#depBtn');busy(b,true);showErr('#depErr','');
+  try{await api.deposit(a);closeSheets();toast('Ajouté : '+fmt(a));await refresh()}
+  catch(err){showErr('#depErr',friendly(err))}
+  finally{busy(b,false)}
+});
+
+/* ---------- Réglages ---------- */
+$('#modeBtn').onclick=function(){$('#cfgUrl').value=cfg.url||'';$('#cfgKey').value=cfg.key||'';showErr('#cfgErr','');openSheet('sheetSettings')};
+$('#copySql').onclick=async function(){
+  var t=$('#sqlText').textContent;
+  try{await navigator.clipboard.writeText(t);toast('Script copié')}
+  catch(e){
+    $('#sqlDetails').open=true;
+    var r=document.createRange();r.selectNodeContents($('#sqlText'));var s=getSelection();s.removeAllRanges();s.addRange(r);
+    toast('Script sélectionné : appuyez sur Copier')
+  }
+};
+$('#cfgForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var url=$('#cfgUrl').value.trim().replace(/\/+$/,''),key=$('#cfgKey').value.trim();
+  if(!/^https:\/\/.+/.test(url)||key.length<20){showErr('#cfgErr','Entrez le Project URL (https://…) et la clé anon public.');return}
+  if(/service_role/i.test(key)){showErr('#cfgErr','Cette clé semble être la clé service_role. Utilisez la clé anon public.');return}
+  cfg={url:url,key:key};store('afc-cfg',cfg);closeSheets();await init();toast('Réglages enregistrés');
+});
+$('#cfgDemo').onclick=async function(){cfg={};store('afc-cfg',cfg);closeSheets();await init();toast('Mode démo activé')};
+
+/* ---------- Fermeture des panneaux ---------- */
+$('#scrim').onclick=closeSheets;
+Array.prototype.forEach.call(document.querySelectorAll('[data-close]'),function(b){b.onclick=closeSheets});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSheets()});
+
+/* ---------- Démarrage ---------- */
+async function init(){
+  live=false;sb=null;
+  if(cfg.url&&cfg.key&&window.supabase){
+    try{sb=window.supabase.createClient(cfg.url,cfg.key);live=true}catch(e){live=false;sb=null}
+  }
+  api=live?liveApi:demoApi;
+  updateBadge();setAuth('login');
+  var s=null;try{s=await api.session()}catch(e){}
+  if(s)await enterApp(s.name);else showAuth();
+}
+init();
+})();
+</script>
